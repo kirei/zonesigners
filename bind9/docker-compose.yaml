@@ -1,0 +1,18 @@
+version: '2'
+
+volumes:
+  config:
+    name: bind9_config
+  storage:
+    name: bind9_storage
+  softhsm:
+    name: bind9_softhsm
+
+services:
+  bind9:
+    image: zonesign_bind9
+    build: .
+    volumes:
+      - config:/config
+      - storage:/storage
+      - softhsm:/var/lib/softhsm
