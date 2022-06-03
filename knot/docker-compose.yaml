@@ -1,0 +1,18 @@
+version: '2'
+
+volumes:
+  config:
+    name: knot_config
+  storage:
+    name: knot_storage
+  softhsm:
+    name: knot_softhsm
+
+services:
+  knot:
+    image: zonesign_knot
+    build: .
+    volumes:
+      - config:/config
+      - storage:/storage
+      - softhsm:/var/lib/softhsm
