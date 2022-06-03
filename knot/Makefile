@@ -16,7 +16,7 @@ cli:
 	docker-compose exec $(SERVICE) bash
 
 axfr:
-	docker-compose exec $(SERVICE) kdig @127.0.0.1 -p 5353 example.com axfr
+	docker-compose exec $(SERVICE) kdig @127.0.0.1 -p 5301 example.com axfr
 
 pregenerate:
 	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com pregenerate +365d
