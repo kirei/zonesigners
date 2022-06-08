@@ -8,6 +8,7 @@ up:
 	docker-compose create
 	$(MAKE) config
 	docker-compose start
+	$(MAKE) keygen
 
 down:
 	docker-compose down
@@ -17,6 +18,11 @@ cli:
 
 axfr:
 	docker-compose exec $(SERVICE) kdig @127.0.0.1 -p 5301 example.com axfr
+
+keygen:
+	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com generate ksk=true
+	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com generate ksk=false
+	docker-compose exec $(SERVICE) knotc reload
 
 pregenerate:
 	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com pregenerate +365d
