@@ -1,0 +1,14 @@
+version: '2'
+
+volumes:
+  config:
+    name: nsd_config
+  storage:
+    name: nsd_storage
+services:
+  nsd:
+    image: zonesign_nsd
+    build: .
+    volumes:
+      - config:/config
+      - storage:/storage
