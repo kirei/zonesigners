@@ -1,39 +1,40 @@
+COMPOSE=	docker-compose
 SERVICE=	knot
 
 
 build:
-	docker-compose build
+	$(COMPOSE) build
 
 up:
-	docker-compose create
+	$(COMPOSE) create
 	$(MAKE) config
-	docker-compose start
+	$(COMPOSE) start
 	$(MAKE) keygen
 
 down:
-	docker-compose down
+	$(COMPOSE) down
 		
 cli:
-	docker-compose exec $(SERVICE) bash
+	$(COMPOSE) exec $(SERVICE) bash
 
 axfr:
-	docker-compose exec $(SERVICE) kdig @127.0.0.1 -p 5301 example.com axfr
+	$(COMPOSE) exec $(SERVICE) kdig @127.0.0.1 -p 5301 example.com axfr
 
 keygen:
-	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com generate ksk=true
-	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com generate ksk=false
-	docker-compose exec $(SERVICE) knotc reload
+	$(COMPOSE) exec $(SERVICE) sudo -u knot keymgr example.com generate ksk=true
+	$(COMPOSE) exec $(SERVICE) sudo -u knot keymgr example.com generate ksk=false
+	$(COMPOSE) exec $(SERVICE) knotc reload
 
 pregenerate:
-	docker-compose exec $(SERVICE) sudo -u knot keymgr example.com pregenerate +365d
+	$(COMPOSE) exec $(SERVICE) sudo -u knot keymgr example.com pregenerate +365d
 
 reconfig: config
-	docker-compose exec $(SERVICE) knotc conf-check
-	docker-compose exec $(SERVICE) knotc reload
+	$(COMPOSE) exec $(SERVICE) knotc conf-check
+	$(COMPOSE) exec $(SERVICE) knotc reload
 
 config:
-	docker-compose cp knot.conf $(SERVICE):/config/knot.conf
-	docker-compose cp example.com.zone $(SERVICE):/storage/example.com.zone
+	$(COMPOSE) cp knot.conf $(SERVICE):/config/knot.conf
+	$(COMPOSE) cp example.com.zone $(SERVICE):/storage/example.com.zone
 
 realclean:
 	docker volume rm knot_config knot_storage knot_softhsm

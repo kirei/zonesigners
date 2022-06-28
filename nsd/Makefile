@@ -1,34 +1,35 @@
+COMPOSE=	docker-compose
 SERVICE=	nsd
 
 
 build:
-	docker-compose build
+	$(COMPOSE) build
 
 up:
 	(cd zones; make)
-	docker-compose create
+	$(COMPOSE) create
 	$(MAKE) config
-	docker-compose start
+	$(COMPOSE) start
 
 down:
-	docker-compose down
+	$(COMPOSE) down
 		
 cli:
-	docker-compose exec $(SERVICE) bash
+	$(COMPOSE) exec $(SERVICE) bash
 
 axfr:
-	docker-compose exec $(SERVICE) dig @127.0.0.1 -p 5303 signed.example.com axfr
+	$(COMPOSE) exec $(SERVICE) dig @127.0.0.1 -p 5303 signed.example.com axfr
 
 reconfig: config
-	docker-compose exec $(SERVICE) nsd-checkconf /config/nsd.conf
-	docker-compose exec $(SERVICE) nsd-control reload
+	$(COMPOSE) exec $(SERVICE) nsd-checkconf /config/nsd.conf
+	$(COMPOSE) exec $(SERVICE) nsd-control reload
 
 config:
-	docker-compose cp nsd.conf $(SERVICE):/config/nsd.conf
-	docker-compose cp nsd2.conf $(SERVICE):/config/nsd2.conf
-	docker-compose cp zones/unsigned.example.com.zone $(SERVICE):/storage/unsigned.example.com
-	docker-compose cp zones/signed.example.com.zone.signed $(SERVICE):/storage/signed.example.com
-	docker-compose cp zones/broken.example.com.zone.signed $(SERVICE):/storage/broken.example.com
+	$(COMPOSE) cp nsd.conf $(SERVICE):/config/nsd.conf
+	$(COMPOSE) cp nsd2.conf $(SERVICE):/config/nsd2.conf
+	$(COMPOSE) cp zones/unsigned.example.com.zone $(SERVICE):/storage/unsigned.example.com
+	$(COMPOSE) cp zones/signed.example.com.zone.signed $(SERVICE):/storage/signed.example.com
+	$(COMPOSE) cp zones/broken.example.com.zone.signed $(SERVICE):/storage/broken.example.com
 
 clean:
 	(cd zones; make clean)
