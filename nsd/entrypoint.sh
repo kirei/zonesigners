@@ -8,4 +8,7 @@ if [ ! -f /config/nsd_control.key ]; then
 	nsd-control-setup
 fi
 
+chown -R nsd:nsd /storage/db
+
+nsd -c /config/nsd2.conf
 nsd -d -V 9
