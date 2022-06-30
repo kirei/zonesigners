@@ -2,11 +2,12 @@ FROM debian:stable AS builder
 
 RUN apt-get -y update
 RUN apt-get -y install build-essential
-RUN apt-get -y install git autoconf libevent-dev libssl-dev bison flex
-
-RUN git clone https://github.com/NLnetLabs/nsd /src
+RUN apt-get -y install git autoconf libevent-dev libssl-dev bison flex curl
 
 WORKDIR /src
+
+#RUN git clone https://github.com/NLnetLabs/nsd /src
+RUN curl -L https://github.com/NLnetLabs/nsd/archive/refs/tags/NSD_4_6_0_REL.tar.gz | tar --strip-components 1 -xzf -
 
 RUN aclocal && autoconf && autoheader
 RUN ./configure --with-configdir=/config --localstatedir=/storage --enable-root-server
