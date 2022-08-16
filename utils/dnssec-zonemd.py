@@ -17,7 +17,6 @@ import dns.query
 import dns.rdataset
 import dns.rdatatype
 import dns.zone
-from dns.zonetypes import DigestHashAlgorithm
 
 DNSSEC_RDATATYPES = {
     dns.rdatatype.DNSKEY,
@@ -44,7 +43,7 @@ class ZoneInformation:
 
         # if we don't have a ZONEMD in the file already, calculate one
         if zonemd_rds is None:
-            zonemd_rrset = zone.compute_digest(DigestHashAlgorithm.SHA384)
+            zonemd_rrset = zone.compute_digest(dns.zone.DigestHashAlgorithm.SHA384)
             zonemd_rds = dns.rdataset.from_rdata_list(soa_rds.ttl, [zonemd_rrset])
 
         return cls(soa_rds=soa_rds, zonemd_rds=zonemd_rds)
