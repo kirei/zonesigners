@@ -1,4 +1,4 @@
-FROM debian:stable
+FROM debian:stable-slim
 
 ENV BUILD_PKGS \
     build-essential \
@@ -7,15 +7,18 @@ ENV BUILD_PKGS \
     libssl-dev \
     bison \
     flex \
-    curl
+    curl \
+    jq
 
 # Install dependencies
 RUN apt-get update && \
     apt-get install -yqq ${BUILD_PKGS}
 
-# Build the project
+# Fetch source
 WORKDIR /nsd-src
-RUN curl -L https://github.com/NLnetLabs/nsd/archive/refs/tags/NSD_4_6_0_REL.tar.gz | tar --strip-components 1 -xzf -
+RUN curl -L `curl -s https://api.github.com/repos/nlnetlabs/nsd/releases/latest | jq -r .tarball_url` | tar --strip-components 1 -xzf -
+
+# Build the project
 RUN aclocal && \
     autoconf && \
     autoheader && \
@@ -27,7 +30,7 @@ RUN aclocal && \
 RUN tar cvzfC /nsd.tar.gz /tmp/nsd-install usr/local config storage
 
 
-FROM debian:stable
+FROM debian:stable-slim
 
 # Environment
 ENV RUNTIME_PKGS \
