@@ -30,3 +30,16 @@
 - Transfer zone from signer
 - Check syntax
 - Provide zone transfer
+
+
+
+## Software
+
+- [Knot](https://www.knot-dns.cz/)
+- [NSD](https://nsd.docs.nlnetlabs.nl/en/latest/)
+
+
+## Container Images
+
+- [Knot](https://hub.docker.com/r/cznic/knot)
+- [NSD](https://hub.docker.com/r/jschlyter/nsd)
