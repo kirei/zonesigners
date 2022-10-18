@@ -41,7 +41,9 @@ services:
     depends_on:
       - registry
   ingress:
-    image: nsd:latest
+    image: jschlyter/nsd:latest
+    environment:
+      NSD_OPTIONS: "-V 9"
     volumes:
       - ingress_config:/config
       - ingress_storage:/storage
@@ -62,7 +64,9 @@ services:
     depends_on:
       - ingress
   egress:
-    image: nsd:latest
+    image: jschlyter/nsd:latest
+    environment:
+      NSD_OPTIONS: "-V 9"
     volumes:
       - egress_config:/config
       - egress_storage:/storage
