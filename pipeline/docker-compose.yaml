@@ -1,0 +1,73 @@
+version: '2'
+
+volumes:
+  registry_config:
+  registry_storage:
+  authority_config:
+  authority_storage:
+  ingress_config:
+  ingress_storage:
+  signer_config:
+  signer_storage:
+  egress_config:
+  egress_storage:
+
+networks:
+  internal:
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.0.0.0/24"
+
+services:
+  registry:
+    image: cznic/knot:latest
+    entrypoint: knotd --verbose
+    volumes:
+      - registry_config:/config
+      - registry_storage:/storage
+    networks:
+      internal:
+        ipv4_address: 10.0.0.11
+  authority:
+    image: cznic/knot:latest
+    entrypoint: knotd --verbose
+    volumes:
+      - authority_config:/config
+      - authority_storage:/storage
+    networks:
+      internal:
+        ipv4_address: 10.0.0.12
+    depends_on:
+      - registry
+  ingress:
+    image: nsd:latest
+    volumes:
+      - ingress_config:/config
+      - ingress_storage:/storage
+    networks:
+      internal:
+        ipv4_address: 10.0.0.13
+    depends_on:
+      - authority
+  signer:
+    image: cznic/knot:latest
+    entrypoint: knotd --verbose
+    volumes:
+      - signer_config:/config
+      - signer_storage:/storage
+    networks:
+      internal:
+        ipv4_address: 10.0.0.14
+    depends_on:
+      - ingress
+  egress:
+    image: nsd:latest
+    volumes:
+      - egress_config:/config
+      - egress_storage:/storage
+    networks:
+      internal:
+        ipv4_address: 10.0.0.15
+    depends_on:
+      - signer
