@@ -44,6 +44,16 @@ axfr:
 	@echo "### Checking egress"
 	$(COMPOSE) exec signer kdig @10.0.0.15 $(ZONE) axfr
 
+reload:
+	$(COMPOSE) exec registry knotc zone-reload $(ZONE)
+
+reconfig:
+	$(COMPOSE) exec registry knotc reload
+	$(COMPOSE) exec authority knotc reload
+	$(COMPOSE) exec ingress nsd-control reconfig
+	$(COMPOSE) exec signer knotc reload
+	$(COMPOSE) exec egress nsd-control reconfig
+
 retransfer:
 	$(COMPOSE) exec authority knotc zone-retransfer $(ZONE)
 	$(COMPOSE) exec ingress nsd-control force_transfer $(ZONE)
@@ -57,6 +67,7 @@ config:
 	$(COMPOSE) cp ingress/nsd.conf ingress:/config/nsd.conf
 	$(COMPOSE) cp signer/knot.conf signer:/config/knot.conf
 	$(COMPOSE) cp egress/nsd.conf egress:/config/nsd.conf
+	$(COMPOSE) cp egress/verify.sh egress:/config/verify.sh
 
 realclean:
 	$(DOCKER) volume rm -f $(VOLUMES)

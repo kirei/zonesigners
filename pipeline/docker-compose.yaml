@@ -64,7 +64,9 @@ services:
     depends_on:
       - ingress
   egress:
-    image: jschlyter/nsd:latest
+    image: nsd_egress
+    build:
+      context: egress
     environment:
       NSD_OPTIONS: "-V 9"
     volumes:
