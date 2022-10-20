@@ -10,6 +10,7 @@ Check DNSSEC signer using ZONEMD:
 
 import argparse
 import logging
+import sys
 from dataclasses import dataclass
 
 import dns.message
@@ -136,7 +137,8 @@ def main():
     logging.info("ZONEMD signed (stripped): %s", stripped_zonemd)
 
     if stripped_zonemd != unsigned.zonemd_rds[0]:
-        raise ValueError("ZONEMD mismatch, signed zone changed")
+        logging.error("ZONEMD mismatch, signed zone changed")
+        sys.exit(-1)
 
 
 if __name__ == "__main__":
