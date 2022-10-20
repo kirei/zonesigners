@@ -20,11 +20,13 @@ import dns.rdatatype
 import dns.zone
 
 DNSSEC_RDATATYPES = {
+    dns.rdatatype.CDNSKEY,
+    dns.rdatatype.CDS,
     dns.rdatatype.DNSKEY,
-    dns.rdatatype.RRSIG,
     dns.rdatatype.NSEC,
     dns.rdatatype.NSEC3,
     dns.rdatatype.NSEC3PARAM,
+    dns.rdatatype.RRSIG,
 }
 
 
@@ -136,7 +138,7 @@ def main():
     # replace SOA with unsigned version
     stripped_zone.replace_rdataset("@", unsigned.soa_rds)
     stripped_zonemd = stripped_zone.compute_digest(
-        unsigned.zonemd_rds[0].hash_algorithm
+        unsigned.zonemd.hash_algorithm
     )
 
     logging.info("ZONEMD stripped: %s", stripped_zonemd)
