@@ -38,7 +38,7 @@ Address: 10.0.0.14
 Address: 10.0.0.15
 
 - Transfer zone from signer
-- Check syntax
+- Check DNSSEC signatures using `ldns-verify-zone`, BIND9 `dnssec-verify`, Knot `kzonecheck` and [`dnssec-zonemd`](https://github.com/kirei/zonesigners/blob/main/utils/dnssec-zonemd.py)
 - Provide zone transfer
 
 
