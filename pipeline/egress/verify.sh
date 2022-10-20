@@ -33,14 +33,14 @@ else
 	echo "dnssec-verify succeeded"
 fi
 
-#echo Running dnssec-zonemd
-#python3 /usr/local/src/dnssec-zonemd.py --origin $ORIGIN --unsigned-server 10.0.0.13 --signed-zone $ZONEFILE
-#if [ $? -ne 0 ]; then
-#	echo "dnssec-zonemd failed"
-#	exit 3
-#else
-#	echo "dnssec-zonemd succeeded"
-#fi
+echo Running dnssec-zonemd
+python3 /usr/local/src/dnssec-zonemd.py --origin $ORIGIN --unsigned-server 10.0.0.13 --signed-zone $ZONEFILE
+if [ $? -ne 0 ]; then
+	echo "dnssec-zonemd failed"
+	exit 3
+else
+	echo "dnssec-zonemd succeeded"
+fi
 
 echo "zone verified successfully"
 exit 0
