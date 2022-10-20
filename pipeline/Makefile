@@ -47,6 +47,9 @@ axfr:
 reload:
 	$(COMPOSE) exec registry knotc zone-reload $(ZONE)
 
+resign:
+	$(COMPOSE) exec signer knotc zone-sign $(ZONE)
+
 reconfig:
 	$(COMPOSE) exec registry knotc reload
 	$(COMPOSE) exec authority knotc reload
