@@ -33,6 +33,10 @@ class ZoneInformation:
     soa_rds: dns.rdataset.Rdataset
     zonemd_rds: dns.rdataset.Rdataset
 
+    @property
+    def zonemd(self):
+        return self.zonemd_rds[0]
+
     @classmethod
     def from_file(cls, origin: str, filename: str):
         zone = dns.zone.from_file(
@@ -107,7 +111,7 @@ def main():
     else:
         raise ValueError("No unsigned zone source")
 
-    logging.info("ZONEMD unsigned: %s", unsigned.zonemd_rds[0])
+    logging.info("ZONEMD unsigned: %s", unsigned.zonemd)
 
     signed_zone = dns.zone.from_file(
         args.signed_zonefile, check_origin=False, relativize=False, origin=args.origin
@@ -115,7 +119,8 @@ def main():
     signed_zone.verify_digest()
 
     signed_zonemd_rds = signed_zone.get_rdataset("@", dns.rdatatype.ZONEMD)
-    logging.debug("ZONEMD signed (original): %s", signed_zonemd_rds[0])
+    signed_zonemd = signed_zonemd_rds[0]
+    logging.info("ZONEMD signed: %s", signed_zonemd)
 
     stripped_zone = signed_zone
     stripped_rds = []
@@ -134,9 +139,9 @@ def main():
         unsigned.zonemd_rds[0].hash_algorithm
     )
 
-    logging.info("ZONEMD signed (stripped): %s", stripped_zonemd)
+    logging.info("ZONEMD stripped: %s", stripped_zonemd)
 
-    if stripped_zonemd != unsigned.zonemd_rds[0]:
+    if stripped_zonemd != unsigned.zonemd:
         logging.error("ZONEMD mismatch, signed zone changed")
         sys.exit(-1)
 
