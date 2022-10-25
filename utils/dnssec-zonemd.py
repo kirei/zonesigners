@@ -11,7 +11,9 @@ Check DNSSEC signer using ZONEMD:
 import argparse
 import logging
 import sys
+import time
 from dataclasses import dataclass
+from typing import Optional
 
 import dns.message
 import dns.query
@@ -29,15 +31,27 @@ DNSSEC_RDATATYPES = {
     dns.rdatatype.RRSIG,
 }
 
+DEFAULT_DIGEST_HASH_ALGORITHM = dns.zone.DigestHashAlgorithm.SHA384
+
+
+class measure_elapsed_time(object):
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.end = time.perf_counter()
+        self.elapsed = self.end - self.start
+
 
 @dataclass(frozen=True)
 class ZoneInformation:
     soa_rds: dns.rdataset.Rdataset
-    zonemd_rds: dns.rdataset.Rdataset
+    zonemd_rds: Optional[dns.rdataset.Rdataset]
 
     @property
     def zonemd(self):
-        return self.zonemd_rds[0]
+        return self.zonemd_rds[0] if self.zonemd_rds else None
 
     @classmethod
     def from_file(cls, origin: str, filename: str):
@@ -50,7 +64,7 @@ class ZoneInformation:
 
         # if we don't have a ZONEMD in the file already, calculate one
         if zonemd_rds is None:
-            zonemd_rrset = zone.compute_digest(dns.zone.DigestHashAlgorithm.SHA384)
+            zonemd_rrset = zone.compute_digest(DEFAULT_DIGEST_HASH_ALGORITHM)
             zonemd_rds = dns.rdataset.from_rdata_list(soa_rds.ttl, [zonemd_rrset])
 
         return cls(soa_rds=soa_rds, zonemd_rds=zonemd_rds)
@@ -69,7 +83,10 @@ class ZoneInformation:
         # query for ZONEMD
         q = dns.message.make_query(qname, dns.rdatatype.ZONEMD)
         response = dns.query.udp(q, server)
-        zonemd_rds = dns.rdataset.from_rdata_list(soa_rds.ttl, response.answer[0])
+        if len(response.answer):
+            zonemd_rds = dns.rdataset.from_rdata_list(soa_rds.ttl, response.answer[0])
+        else:
+            zonemd_rds = None
 
         return cls(soa_rds=soa_rds, zonemd_rds=zonemd_rds)
 
@@ -106,19 +123,38 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
 
-    if args.unsigned_zonefile:
-        unsigned = ZoneInformation.from_file(args.origin, args.unsigned_zonefile)
-    elif args.unsigned_server:
-        unsigned = ZoneInformation.from_dns(args.origin, args.unsigned_server)
-    else:
-        raise ValueError("No unsigned zone source")
+    t = time.perf_counter()
 
-    logging.info("ZONEMD unsigned: %s", unsigned.zonemd)
+    with measure_elapsed_time() as t:
+        if args.unsigned_zonefile:
+            unsigned = ZoneInformation.from_file(args.origin, args.unsigned_zonefile)
+        elif args.unsigned_server:
+            unsigned = ZoneInformation.from_dns(args.origin, args.unsigned_server)
+        else:
+            raise ValueError("No unsigned zone source")
+        if unsigned.zonemd:
+            logging.info("ZONEMD unsigned: %s", unsigned.zonemd)
+        else:
+            logging.error("No ZONEMD in unsigned zone")
+            sys.exit(-2)
+    logging.debug("Processed unsigned zone in %.3f seconds", t.elapsed)
 
-    signed_zone = dns.zone.from_file(
-        args.signed_zonefile, check_origin=False, relativize=False, origin=args.origin
-    )
-    signed_zone.verify_digest()
+    with measure_elapsed_time() as t:
+        signed_zone = dns.zone.from_file(
+            args.signed_zonefile,
+            check_origin=False,
+            relativize=False,
+            origin=args.origin,
+        )
+    logging.debug("Read signed zone in %.3f seconds", t.elapsed)
+
+    with measure_elapsed_time() as t:
+        try:
+            signed_zone.verify_digest()
+        except dns.zone.NoDigest:
+            logging.error("No ZONEMD in signed zone")
+            sys.exit(-2)
+    logging.debug("Verified zone in %.3f seconds", t.elapsed)
 
     signed_zonemd_rds = signed_zone.get_rdataset("@", dns.rdatatype.ZONEMD)
     signed_zonemd = signed_zonemd_rds[0]
@@ -127,24 +163,31 @@ def main():
     stripped_zone = signed_zone
     stripped_rds = []
 
-    for (name, node) in stripped_zone.items():
-        for rds in node:
-            if rds.rdtype in DNSSEC_RDATATYPES:
-                stripped_rds.append((name, rds))
+    with measure_elapsed_time() as t:
+        for (name, node) in stripped_zone.items():
+            for rds in node:
+                if rds.rdtype in DNSSEC_RDATATYPES:
+                    stripped_rds.append((name, rds))
+    logging.debug("Searched zone in %.3f seconds", t.elapsed)
 
-    for name, rds in stripped_rds:
-        stripped_zone.delete_rdataset(name, rds.rdtype, rds.covers)
+    with measure_elapsed_time() as t:
+        for name, rds in stripped_rds:
+            stripped_zone.delete_rdataset(name, rds.rdtype, rds.covers)
+    logging.debug("Deleted DNSSEC RRs in %.3f seconds", t.elapsed)
 
-    # replace SOA with unsigned version
-    stripped_zone.replace_rdataset("@", unsigned.soa_rds)
-    stripped_zonemd = stripped_zone.compute_digest(
-        unsigned.zonemd.hash_algorithm
-    )
+    # replace SOA with unsigned version and calculate ZONEMD
+    with measure_elapsed_time() as t:
+        stripped_zone.replace_rdataset("@", unsigned.soa_rds)
+        stripped_zonemd = stripped_zone.compute_digest(
+            unsigned.zonemd.hash_algorithm
+            if unsigned.zonemd
+            else DEFAULT_DIGEST_HASH_ALGORITHM
+        )
+    logging.debug("Computed new ZONEMD in %.3f seconds", t.elapsed)
 
     logging.info("ZONEMD stripped: %s", stripped_zonemd)
-
     if stripped_zonemd != unsigned.zonemd:
-        logging.error("ZONEMD mismatch, signed zone changed")
+        logging.error("ZONEMD mismatch, signed zone altered")
         sys.exit(-1)
 
 
