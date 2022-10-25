@@ -70,7 +70,7 @@ class ZoneInformation:
         return cls(soa_rds=soa_rds, zonemd_rds=zonemd_rds)
 
     @classmethod
-    def from_dns(cls, origin: str, server: str):
+    def from_dns(cls, origin: str, server: str, port: int = 53):
         qname = dns.name.from_text(origin)
 
         # query for SOA
@@ -82,7 +82,7 @@ class ZoneInformation:
 
         # query for ZONEMD
         q = dns.message.make_query(qname, dns.rdatatype.ZONEMD)
-        response = dns.query.udp(q, server)
+        response = dns.query.udp(q, where=server, port=port)
         if len(response.answer):
             zonemd_rds = dns.rdataset.from_rdata_list(soa_rds.ttl, response.answer[0])
         else:
@@ -107,14 +107,33 @@ def main():
         "--unsigned-server",
         dest="unsigned_server",
         type=str,
-        help="Unsigned name server",
+        help="Unsigned name server address",
+    )
+    parser.add_argument(
+        "--unsigned-port",
+        dest="unsigned_port",
+        type=int,
+        default=53,
+        help="Unsigned name server port",
     )
     parser.add_argument(
         "--signed-zone",
         dest="signed_zonefile",
         type=str,
         help="Signed zone file",
-        required=True,
+    )
+    parser.add_argument(
+        "--signed-server",
+        dest="signed_server",
+        type=str,
+        help="Signed name server address",
+    )
+    parser.add_argument(
+        "--signed-port",
+        dest="signed_port",
+        type=int,
+        default=53,
+        help="Signed name server port",
     )
     args = parser.parse_args()
 
@@ -129,23 +148,31 @@ def main():
         if args.unsigned_zonefile:
             unsigned = ZoneInformation.from_file(args.origin, args.unsigned_zonefile)
         elif args.unsigned_server:
-            unsigned = ZoneInformation.from_dns(args.origin, args.unsigned_server)
+            unsigned = ZoneInformation.from_dns(args.origin, args.unsigned_server, args.unsigned_port)
         else:
             raise ValueError("No unsigned zone source")
-        if unsigned.zonemd:
-            logging.info("ZONEMD unsigned: %s", unsigned.zonemd)
-        else:
-            logging.error("No ZONEMD in unsigned zone")
-            sys.exit(-2)
     logging.debug("Processed unsigned zone in %.3f seconds", t.elapsed)
 
+    if unsigned.zonemd:
+        logging.info("ZONEMD unsigned: %s", unsigned.zonemd)
+    else:
+        logging.error("No ZONEMD in unsigned zone")
+        sys.exit(-2)
+
     with measure_elapsed_time() as t:
-        signed_zone = dns.zone.from_file(
-            args.signed_zonefile,
-            check_origin=False,
-            relativize=False,
-            origin=args.origin,
-        )
+        if args.signed_zonefile:
+            signed_zone = dns.zone.from_file(
+                args.signed_zonefile,
+                check_origin=False,
+                relativize=False,
+                origin=args.origin,
+            )
+        elif args.signed_server:
+            signed_zone = dns.zone.from_xfr(
+                dns.query.xfr(zone=args.origin, where=args.signed_server, port=args.signed_port)
+            )
+        else:
+            raise ValueError("No signed zone source")
     logging.debug("Read signed zone in %.3f seconds", t.elapsed)
 
     with measure_elapsed_time() as t:
@@ -173,7 +200,7 @@ def main():
     with measure_elapsed_time() as t:
         for name, rds in stripped_rds:
             stripped_zone.delete_rdataset(name, rds.rdtype, rds.covers)
-    logging.debug("Deleted DNSSEC RRs in %.3f seconds", t.elapsed)
+    logging.debug("Stripped zone of all DNSSEC RRs in %.3f seconds", t.elapsed)
 
     # replace SOA with unsigned version and calculate ZONEMD
     with measure_elapsed_time() as t:
