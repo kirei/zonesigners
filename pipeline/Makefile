@@ -17,6 +17,9 @@ VOLUMES=	$(PREFIX)registry_config \
 
 all:
 
+build:
+	$(COMPOSE) build
+
 up:
 	$(COMPOSE) create
 	$(MAKE) config
