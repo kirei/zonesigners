@@ -17,9 +17,6 @@ VOLUMES=	$(PREFIX)registry_config \
 
 all:
 
-images:
-	(cd containers/nsd; docker build -t nsd:latest .)
-
 up:
 	$(COMPOSE) create
 	$(MAKE) config
