@@ -1,5 +1,5 @@
 DOCKER=		docker
-COMPOSE=	docker-compose
+COMPOSE=	docker compose
 
 PREFIX=		pipeline_
 ZONE=		example.com
