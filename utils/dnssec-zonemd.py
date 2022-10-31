@@ -142,8 +142,6 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
 
-    t = time.perf_counter()
-
     with measure_elapsed_time() as t:
         if args.unsigned_zonefile:
             unsigned = ZoneInformation.from_file(args.origin, args.unsigned_zonefile)
