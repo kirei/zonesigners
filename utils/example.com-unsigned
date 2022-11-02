@@ -1,0 +1,11 @@
+example.com.		3600	IN	SOA	dns1.example.com. hostmaster.example.com. 1666274644 21600 3600 604800 86400
+example.com.		3600	IN	NS	dns1.example.com.
+example.com.		3600	IN	NS	dns2.example.com.
+example.com.		3600	IN	MX	0 .
+example.com.		3600	IN	ZONEMD	1666274644 1 1 2797C121EDB8D2C298F8480C860903E78CEFB2AE318EF44A61B53132 A31DC8742ACD30E49E294051E406FB9139161003
+dns1.example.com.	3600	IN	A	192.0.2.1
+dns1.example.com.	3600	IN	AAAA	2001:db8::1
+dns2.example.com.	3600	IN	A	192.0.2.2
+dns2.example.com.	3600	IN	AAAA	2001:db8::2
+mail.example.com.	3600	IN	A	192.0.2.3
+mail.example.com.	3600	IN	AAAA	2001:db8::3
